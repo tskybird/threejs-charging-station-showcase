@@ -8,13 +8,13 @@ import Stats from 'three/addons/libs/stats.module.js'
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
 import { GLTFLoader, DRACOLoader } from 'three/examples/jsm/Addons.js'
 import { MapControls } from 'three/addons/controls/mapControls.js'; // 相机控件
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+// import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 // 引入渲染器通道RenderPass
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+// import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 // 引入OutlinePass通道
-import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
+// import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
 // import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+// import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 // import { GlitchPass } from 'three/addons/postprocessing/GlitchPass.js'
 // import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 // import { GammaCorrectionShader } from 'three/addons/shaders/GammaCorrectionShader.js'
@@ -25,14 +25,14 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 // import {SMAAPass} from 'three/addons/postprocessing/SMAAPass.js'
 
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js'
-import { ViewHelper } from 'three/addons/helpers/ViewHelper.js'
+// import { ViewHelper } from 'three/addons/helpers/ViewHelper.js'
 
 // import monkeyUrl from  '@/assets/three/monkey.glb'
 // import monkeyUrl2 from '@/assets/three/monkey.gltf'
 import sphereBack from '@/assets/img/sphereBack.jpg'
 
-import {VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper.js'
-import { saturation } from 'three/tsl'
+// import {VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper.js'
+// import { saturation } from 'three/tsl'
 // import {VertexNormalsHelper } from 'three/addons/libs/helpers/VertexNormalsHelper.js'
 
 
@@ -520,7 +520,7 @@ const progress = ref()
 // charge station
 function loadChargeSationModels() {
   // const url = '/three/new_energy_vehicle_charging_station/scene.gltf'
-  const url = '/three/new_energy_vehicle_charging_station.glb'
+  const url = './three/new_energy_vehicle_charging_station.glb'
   const onProgress = (val) => {
     progress.value = val + '%'
   }
@@ -582,9 +582,8 @@ function loadModels(url, callback, onProgress) {
 </script>
 
 <template>
-
-    <div id="canvasContainer" class="min-h-screen"></div>
-
+  模型
+  <div id="canvasContainer" class="min-h-screen"></div>
 </template>
 
 <style scoped>
