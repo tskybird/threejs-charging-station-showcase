@@ -18,6 +18,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'docs' // github pages
-  }
+  },
+  base: './' // github pages，需将静态资源的绝对路径改成相对路径
   
 })
