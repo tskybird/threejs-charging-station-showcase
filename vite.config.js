@@ -19,18 +19,18 @@ export default defineConfig(({ command, mode }) => {
     },
     base: '/threejs-charging-station-showcase/', // github pages，需将静态资源的绝对路径改成相对路径
     build: {
-      outDir: 'docs' // github pages
-    }, 
-    copyPublicDir: true, 
-    rolldownOptions: {
-      output: {
-        minify: {
-          compress: {
-            dropConsole: command === 'build', // 生产环境去除console
-            dropDebugger: command === 'build', // 生产环境去除debugger
+      outDir: 'docs', // github pages
+      rolldownOptions: {
+        output: {
+          minify: {
+            compress: {
+              dropConsole: command === 'build', // 生产环境去除console
+              dropDebugger: command === 'build', // 生产环境去除debugger
+            }
           }
         }
       }
-    }
+    }, 
+    copyPublicDir: true,
   }
 })
