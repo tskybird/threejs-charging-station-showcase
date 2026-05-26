@@ -8,13 +8,13 @@ import Stats from 'three/addons/libs/stats.module.js'
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
 import { GLTFLoader, DRACOLoader } from 'three/examples/jsm/Addons.js'
 import { MapControls } from 'three/addons/controls/mapControls.js'; // 相机控件
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+// import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 // 引入渲染器通道RenderPass
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+// import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 // 引入OutlinePass通道
-import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
+// import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
 // import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+// import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 // import { GlitchPass } from 'three/addons/postprocessing/GlitchPass.js'
 // import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 // import { GammaCorrectionShader } from 'three/addons/shaders/GammaCorrectionShader.js'
@@ -25,14 +25,14 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 // import {SMAAPass} from 'three/addons/postprocessing/SMAAPass.js'
 
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js'
-import { ViewHelper } from 'three/addons/helpers/ViewHelper.js'
+// import { ViewHelper } from 'three/addons/helpers/ViewHelper.js'
 
 // import monkeyUrl from  '@/assets/three/monkey.glb'
 // import monkeyUrl2 from '@/assets/three/monkey.gltf'
 import sphereBack from '@/assets/img/sphereBack.jpg'
 
-import {VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper.js'
-import { saturation } from 'three/tsl'
+// import {VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper.js'
+// import { saturation } from 'three/tsl'
 // import {VertexNormalsHelper } from 'three/addons/libs/helpers/VertexNormalsHelper.js'
 
 
@@ -73,24 +73,6 @@ onMounted(() => {
       // 但是不会每渲染一帧，就通过相机的属性计算投影矩阵(节约计算资源)
       // 如果相机的一些属性发生了变化，需要执行updateProjectionMatrix ()方法更新相机的投影矩阵
       camera.updateProjectionMatrix()
-      
-      
-
-      // if (!envMap) {
-      //   const canvasAspect = width / height  //第1步：计算出画布宽高比
-      //   // const bgTexture = textureRef.current
-      //   const imgAspect = envMap.image.width / envMap.image.height  //第2步：计算出背景图宽高比
-
-      //   const resultAspect = imgAspect / canvasAspect  //第3步：计算出最终背景图宽缩放宽高比
-
-      //   //第4步：设置背景图纹理的偏移和重复
-      //   envMap.offset.x = resultAspect > 1 ? (1 - 1 / resultAspect) / 2 : 0
-      //   envMap.repeat.x = resultAspect > 1 ? 1 / resultAspect : 1
-
-      //   envMap.offset.y = resultAspect > 1 ? 0 : (1 - resultAspect) / 2
-      //   envMap.repeat.y = resultAspect > 1 ? 1 : resultAspect
-      // }
-
   })  
 })
 
@@ -119,9 +101,6 @@ function envMapResize(width, height) {
   }
 }
 
-
-
-
 function init() {
   const container = document.getElementById('canvasContainer')
 
@@ -141,10 +120,6 @@ function init() {
 
   // 2、场景
   scene = new THREE.Scene()
-  // envMap = loadTexture(sphereBack)
-  // envMapResize(container.clientWidth, container.clientHeight)
-  // scene.environment = envMap
-  // scene.background = envMap
 
   // 3、渲染器，并将其渲染后的canvas元素添加到页面中  
   renderer = new THREE.WebGLRenderer({
@@ -515,15 +490,20 @@ function loadCubeTexture(paths, callback, basePath) {
   })
 }
 
-const progress = ref()
+const progress = ref(0)
+const loading = ref(false)
+
 
 // charge station
 function loadChargeSationModels() {
   // const url = '/three/new_energy_vehicle_charging_station/scene.gltf'
-  const url = '/three/new_energy_vehicle_charging_station.glb'
+  const url = './three/new_energy_vehicle_charging_station.glb'
   const onProgress = (val) => {
-    progress.value = val + '%'
+    // progress.value = val + '%'
+    console.log(`GLTF加载进度：${val}`)
+    progress.value = val
   }
+  loading.value = true
 
   loadModels(url, (gltf) => {
     console.log(gltf)
@@ -552,7 +532,7 @@ function loadChargeSationModels() {
     model.traverse((child) => {
 
     })
-    // gltf.scene.dispose()
+    loading.value = false
     scene.add(model)    
   
   }, onProgress)
@@ -567,6 +547,7 @@ function loadModels(url, callback, onProgress) {
   // const dracoLoader = new DRACOLoader()
   // dracoLoader.setDecoderPath( 'three/examples/jsm/libs/draco/' )
   // loader.setDRACOLoader( dracoLoader )
+  
   loader.load(url, (gltf) => {
     callback(gltf)
   }, (progerss) => {
@@ -581,24 +562,18 @@ function loadModels(url, callback, onProgress) {
 
 </script>
 
-<template>
-
+<template> 
+  <div class="h-full relative">
     <div id="canvasContainer" class="min-h-screen"></div>
-
+    <!-- TODO: 蒙版 -->
+    <div v-if="loading" class = "h-full w-full bg-gray-200">
+      <progress class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" id="file" max="100" :value="progress">{{progress}}%</progress>
+    </div>
+    <div class="absolute bottom-4 left-0 right-0 text-center text-sm text-gray-500">
+      "New energy vehicle charging station - 新能源车充电站" (https://skfb.ly/pq7EV) by MrdT is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
+    </div>
+  </div>
 </template>
 
 <style scoped>
-.container {
-  width: 100%;
-  height: 600px;
-  /* border: 1px solid red; */
-  overflow: hidden;
-}
-#tag {
-  padding: 0px 10px;
-  border: #00ffff solid 1px;
-  height: 40px;
-  border-radius: 5px;
-  width: 65px;
-}
 </style>
