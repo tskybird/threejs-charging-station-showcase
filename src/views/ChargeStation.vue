@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick, onMounted, onUnmounted, useTemplateRef, watchEffect } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, h } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 //引入性能监视器stats.js
@@ -7,12 +7,12 @@ import Stats from 'three/addons/libs/stats.module.js'
 // 引入dat.gui.js的一个类GUI
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
 import { GLTFLoader, DRACOLoader } from 'three/examples/jsm/Addons.js'
-import { MapControls } from 'three/addons/controls/mapControls.js'; // 相机控件
+// import { MapControls } from 'three/addons/controls/mapControls.js'; // 相机控件
 // import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 // 引入渲染器通道RenderPass
 // import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 // 引入OutlinePass通道
-// import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
+import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
 // import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 // import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 // import { GlitchPass } from 'three/addons/postprocessing/GlitchPass.js'
@@ -25,6 +25,7 @@ import { MapControls } from 'three/addons/controls/mapControls.js'; // 相机控
 // import {SMAAPass} from 'three/addons/postprocessing/SMAAPass.js'
 
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js'
+import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js'
 // import { ViewHelper } from 'three/addons/helpers/ViewHelper.js'
 
 // import monkeyUrl from  '@/assets/three/monkey.glb'
@@ -35,18 +36,19 @@ import sphereBack from '@/assets/img/sphereBack.jpg'
 // import { saturation } from 'three/tsl'
 // import {VertexNormalsHelper } from 'three/addons/libs/helpers/VertexNormalsHelper.js'
 
+import PileInfo from './PileInfo.vue'
+
 
 let container, camera, scene, renderer, envMap
-let outlinePass, composer, raycaster, css2Renderer, meshs = []
-const loadManager = new THREE.LoadingManager()
-
+let outlinePass, composer, raycaster, css3Renderer, meshes = []
+// let  css2Renderer
+// const loadManager = new THREE.LoadingManager()
 
 onMounted(() => {
   console.log('查看当前屏幕设备像素比', window.devicePixelRatio)
   container = document.getElementById('canvasContainer')
 
   init()
-  console.log('888888888:', renderer.domElement.width, renderer.domElement.height)
 
   // TODO: 确认是否生效
   // onresize 事件会在窗口被调整大小时发生
@@ -56,23 +58,24 @@ onMounted(() => {
     const a = document.getElementById('canvasContainer')
     console.log(a.clientWidth, a.clientHeight)
     console.log('window.devicePixelRatio:',window.devicePixelRatio, '.getPixelRatio', renderer.getPixelRatio(), renderer.getCurrentViewport(new THREE.Vector2()))
-    // window.onresize = function () {
-      // const container = document.getElementById('canvasContainer')
-      const width = container.clientWidth
-      const height = container.clientHeight
 
-      // 解决背景图变形
-      envMapResize(width, height)
+    const width = container.clientWidth
+    const height = container.clientHeight
 
-      // 重置渲染器输出画布canvas尺寸: style中设置的width和height，
-      // canvas的width和height属性可能和style的不一样，但是比值一样
-      renderer.setSize(width, height)
-      // 全屏情况下：设置观察范围长宽比aspect为窗口宽高比
-      camera.aspect = width / height    
-      // 渲染器执行render方法的时候会读取相机对象的投影矩阵属性projectionMatrix
-      // 但是不会每渲染一帧，就通过相机的属性计算投影矩阵(节约计算资源)
-      // 如果相机的一些属性发生了变化，需要执行updateProjectionMatrix ()方法更新相机的投影矩阵
-      camera.updateProjectionMatrix()
+    // 解决背景图变形
+    envMapResize(width, height)
+
+    // 重置渲染器输出画布canvas尺寸: style中设置的width和height，
+    // canvas的width和height属性可能和style的不一样，但是比值一样
+    renderer.setSize(width, height)
+    css3Renderer.setSize(width, height)
+
+    // 全屏情况下：设置观察范围长宽比aspect为窗口宽高比
+    camera.aspect = width / height    
+    // 渲染器执行render方法的时候会读取相机对象的投影矩阵属性projectionMatrix
+    // 但是不会每渲染一帧，就通过相机的属性计算投影矩阵(节约计算资源)
+    // 如果相机的一些属性发生了变化，需要执行updateProjectionMatrix ()方法更新相机的投影矩阵
+    camera.updateProjectionMatrix()
   })  
 })
 
@@ -106,15 +109,16 @@ function init() {
 
   // 1、相机
   const aspect = container.clientWidth / container.clientHeight
-  camera = new THREE.PerspectiveCamera(30, aspect, 0.1, 2000)
+  camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 2000)
 
   // const k = container.clientWidth / container.clientHeight
   // const s = 0.5; //控制left, right, top, bottom范围大小
   // camera = new THREE.OrthographicCamera(-s * k, s * k, s, -s, 1, 8000)
   
   // camera.position.set(0, 0, 0)
-  camera.position.set(292, 133, -544)
-  // camera.position.set(200, 133, -400)
+  camera.position.set(-250, 150, 300)
+  // camera.position.set(400, 250, 700)
+
   camera.lookAt(0, 0, 0)
   camera.updateProjectionMatrix()
 
@@ -146,37 +150,42 @@ function init() {
   sceneDesc.textContent = '3D新能源汽车充电站展示已加载'
   document.body.appendChild(sceneDesc)
 
-  renderer.domElement.addEventListener('click', function (event) {
-    // .offsetY、.offsetX以canvas画布左上角为坐标原点,单位px
-    const px = event.offsetX
-    const py = event.offsetY
-    //屏幕坐标px、py转WebGL标准设备坐标x、y
-    //width、height表示canvas画布宽高度
-    const x = (px / container.clientWidth) * 2 - 1
-    const y = -(py / container.clientHeight) * 2 + 1
-    //创建一个射线投射器`Raycaster`
-    raycaster = new THREE.Raycaster();
-    //.setFromCamera()计算射线投射器`Raycaster`的射线属性.ray
-    // 形象点说就是在点击位置创建一条射线，射线穿过的模型代表选中
-    raycaster.setFromCamera(new THREE.Vector2(x, y), camera)
-    //.intersectObjects([mesh1, mesh2, mesh3])对参数中的网格模型对象进行射线交叉计算
-    // 未选中对象返回空数组[],选中一个对象，数组1个元素，选中两个对象，数组两个元素
-    const intersects = raycaster.intersectObjects(meshs)
-    console.log("射线器返回的对象", intersects);
-    // intersects.length大于0说明，说明选中了模型
-    if (intersects.length > 0) {
-        // 选中模型的第一个模型，设置为红色
-        intersects[0].object.material.color.set(0xff0000)
-        intersects.forEach(item => {
-          console.log('item.object.name:', item.object.name, 'color', item.object.material.color)
-          // if(item.object.name === 'monkey' || item.object.name === 'sprite') {
-          if(item.object.name === 'monkey') {
-            item.object.material.color.set(0xffff000)
-            console.log('color 2', item.object.material.color)
-          }
-        })
-    }
-  })
+  renderer.domElement.addEventListener('click', onClickHandler)
+
+  // renderer.domElement.addEventListener('click', function (event) {
+    // // .offsetY、.offsetX以canvas画布左上角为坐标原点,单位px
+    // const px = event.offsetX
+    // const py = event.offsetY
+    // //屏幕坐标px、py转WebGL标准设备坐标x、y
+    // //width、height表示canvas画布宽高度
+    // const x = (px / container.clientWidth) * 2 - 1
+    // const y = -(py / container.clientHeight) * 2 + 1
+
+    // //创建一个射线投射器`Raycaster`
+    // raycaster = new THREE.Raycaster()
+    // // 计算射线投射器`Raycaster`的射线属性.ray
+    // // 形象点说就是在点击位置创建一条射线，射线穿过的模型代表选中
+    // raycaster.setFromCamera(new THREE.Vector2(x, y), camera)
+    // //.intersectObjects([mesh1, mesh2, mesh3])对参数中的网格模型对象进行射线交叉计算
+    // // 未选中对象返回空数组[],选中一个对象，数组1个元素，选中两个对象，数组两个元素
+    // const intersects = raycaster.intersectObjects(meshes)
+    // console.log('射线器返回的对象:', intersects)
+    // // intersects.length大于0说明，说明选中了模型
+    // if (intersects.length > 0) {
+    //     // 选中模型的第一个模型，设置为红色
+    //     intersects[0].object.material.color.set(0xff0000)
+    //     intersects.forEach(item => {
+    //       console.log('item.object.name:', item.object.name, 'color', item.object.material.color)
+    //       // if(item.object.name === 'monkey' || item.object.name === 'sprite') {
+    //       // if(item.object.name === 'monkey') {
+    //       //   item.object.material.color.set(0xffff000)
+    //       //   console.log('color 2', item.object.material.color)
+    //       // }
+    //     })
+    // }
+  // })
+
+  
 
   // 处理渲染后期
   // 创建后处理对象EffectComposer，WebGL渲染器作为参数
@@ -232,20 +241,71 @@ function init() {
   // composer.addPass( outputPass ) 
   // renderer.setAnimationLoop(animate) //设置渲染循环，参数是一个函数，在每一帧执行
 
-  css2Renderer = css2DRender(container.clientWidth, container.clientHeight)
+  // css2Renderer = css2DRender(container.clientWidth, container.clientHeight)
+  css3Renderer = createCss3DRenderer(container.clientWidth, container.clientHeight, container)
 
   // 添加辅助工具
   addHelpers()
   // 添加光源
-  addPointLight()
-  addDirectionalLight()
-  addAmbientLight()
+  // addPointLight()
+  addDirectionalLight(scene)
+  addAmbientLight(scene)
   // addSpotLight() 
 
   addObject()
   loadEnvMap()
   animate()
   
+}
+
+let choseObj = null
+let tags = new Map() // 存储已创建的标签，避免重复创建
+let tag = null 
+function onClickHandler(event) {
+  console.log('射线器返meshes:', meshes)
+  // .offsetY、.offsetX以canvas画布左上角为坐标原点,单位px
+  const px = event.offsetX
+  const py = event.offsetY
+  // 屏幕坐标px、py转WebGL标准设备坐标x、y
+  // width、height表示canvas画布宽高度
+  const x = (px / container.clientWidth) * 2 - 1
+  const y = -(py / container.clientHeight) * 2 + 1
+
+  //创建一个射线投射器`Raycaster`
+  raycaster = new THREE.Raycaster()
+  // 计算射线投射器`Raycaster`的射线属性.ray
+  // 形象点说就是在点击位置创建一条射线，射线穿过的模型代表选中
+  raycaster.setFromCamera(new THREE.Vector2(x, y), camera)
+  //.intersectObjects([mesh1, mesh2, mesh3])对参数中的网格模型对象进行射线交叉计算
+  // 未选中对象返回空数组[],选中一个对象，数组1个元素，选中两个对象，数组两个元素
+  const intersects = raycaster.intersectObjects(meshes)
+  console.log('射线器返回的对象:', intersects)
+  // intersects.length大于0说明，说明选中了模型
+  if (intersects.length > 0) {
+    // 第一个是最近的
+    const parent = intersects[0].object.parent
+    const id = parent.name
+    
+    if(!choseObj || choseObj.name !== id) {
+      let tag
+      if(!tags.has(id)) {
+        tag = createCss3DObj(id, { x: 0, y: 0, z: parent.position.z + 10 })
+        tags.set(id, tag) // 创建的scss3dObject对象存储到tags中，避免重复创建；后面关闭/移除时也会用到
+      } else {
+        tag = tags.get(id)   
+      }     
+      
+      parent.add(tag)
+      // 移除上一个标签
+      choseObj && choseObj.remove(tags.get(choseObj.name))
+      choseObj = parent
+    }
+  } 
+  // else {
+  //   if(choseObj) {
+  //     choseObj = null
+  //   }
+  // }
 }
 
 function loadEnvMap() {
@@ -263,20 +323,53 @@ function css2DRender(width, height) {
   // HTML标签<div id="tag"></div>外面父元素叠加到canvas画布上且重合
   css2Renderer.domElement.style.position = 'absolute'
   css2Renderer.domElement.style.top = '0px'
-  // css2Renderer.domElement.style.left = width / 2 + 'px'
-  // css2Renderer.domElement.style.zIndex =  99999
   //设置.pointerEvents=none，解决HTML元素标签对threejs canvas画布鼠标事件的遮挡
-  css2Renderer.domElement.style.pointerEvents = 'none'
-  // document.body.appendChild(css2Renderer.domElement)
+  css2Renderer.domElement.style.pointerEvents = 'none' 
 
   container.appendChild(css2Renderer.domElement)
   return css2Renderer
 }
 
+function createCss3DRenderer(width, height, container) {
+  // 创建一个CSS3渲染器CSS3DRenderer
+  const css3Renderer = new CSS3DRenderer()
+  css3Renderer.setSize(width, height)
+  // HTML标签<div id="tag"></div>外面父元素叠加到canvas画布上且重合
+  css3Renderer.domElement.style.position = 'absolute'
+  css3Renderer.domElement.style.top = '0px'
+  //设置.pointerEvents=none，解决HTML元素标签对threejs canvas画布鼠标事件的遮挡
+  css3Renderer.domElement.style.pointerEvents = 'none'
+  container.appendChild(css3Renderer.domElement)
+  return css3Renderer
+}
 
 
-// let i = 0; //在渲染循环中累加变化
-// const timer = new THREE.Timer() // Clock废弃
+function createCss3DObj(id, { x = 0, y = 0, z = 0 } = {}) {
+  const div = document.getElementById(id)
+  console.log('createCss3DObj div:', div, pilesInfo.value.find(item => item.id === id))
+  div.style.pointerEvents = 'none'
+  div.style.display = 'block'
+
+  // const div = document.createElement('div')
+  // div.id = id
+  // div.textContent = text
+  // div.style.color = '#FFFFFF'
+  // div.style.pointerEvents = 'none'
+  
+  // HTML元素转化为threejs的CSS3模型对象
+  const tag = new CSS3DObject(div)
+  //标签tag作为mesh子对象，默认标注在模型局部坐标系坐标原点
+  // mesh.add(tag)
+  // tags.set(id, tag)
+  // console.log('add tag:', mesh)
+  // tag的局部坐标
+  // tag.position.y += 80
+  tag.position.x = x
+  tag.position.y = y
+  tag.position.z = z
+  tag.rotation.set(Math.PI / 2, Math.PI, 0) // 标签默认朝向是z轴正方向，旋转后朝向y轴正方向
+  return tag
+}
 
 function animate() {
   // const spt = timer.getDelta() * 1000 //毫秒
@@ -292,7 +385,7 @@ function animate() {
   // orbitControls.autoRotate设置为true，必须在此调用update
   // if(orbitControls) orbitControls.update()
   
-  css2Renderer.render(scene, camera)
+  css3Renderer.render(scene, camera)
   // renderer.autoClear = false
   // renderer.clearDepth()
   // composer.render(scene, camera)
@@ -321,7 +414,7 @@ let orbitControls
 function addOrbitControls() {
   orbitControls = new OrbitControls(camera, renderer.domElement)
   // 控制前后旋转范围：.maxPolarAngle属性设置为90度，这样不能看到模型底部
-  orbitControls.maxPolarAngle = Math.PI/2
+  orbitControls.maxPolarAngle = Math.PI / 2
   // 控制左右旋转范围
   // orbitControls.minAzimuthAngle = -Math.PI/2
   // orbitControls.maxAzimuthAngle = Math.PI/2
@@ -345,8 +438,8 @@ function addMapControls() {
   controls.addEventListener('change', function () {
     // 鼠标右键旋转时候，查看.position变化
     // 鼠标左键拖动的时候，查看.position、.target的位置会变化
-    console.log('camera.position',camera.position);
-    console.log('controls.target',controls.target);
+    console.log('camera.position',camera.position)
+    console.log('controls.target',controls.target)
   })
 }
 
@@ -356,11 +449,11 @@ function addPointLightHelper(pointLight) {
   scene.add(pointLightHelper) 
 }
 
-function addDirectionalLightHelper(directionalLight) {
-  const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, 10)  
+function addDirectionalLightHelper(directionalLight, size) {
+  const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, size)  
   // 可视化平行光阴影对应的正投影相机对象
   const cameraHelper = new THREE.CameraHelper(directionalLight.shadow.camera)
-//   scene.add(cameraHelper);
+  // scene.add(cameraHelper)
   scene.add(directionalLightHelper, cameraHelper)
 }
 
@@ -443,26 +536,26 @@ function addPointLight() {
 
 let directionalLight
 // 2、平行光
-function addDirectionalLight() {
+function addDirectionalLight(scene) {
   directionalLight = new THREE.DirectionalLight(0xffffff, 1)
-  directionalLight.position.set(100, 200, 100)
+  directionalLight.position.set(400, 400, 400)
   directionalLight.castShadow = true
-  addDirectionalLightHelper(directionalLight)
+  // addDirectionalLightHelper(directionalLight, 200)
   scene.add(directionalLight)
 }
 
 // 3、环境光
-function addAmbientLight() {
+function addAmbientLight(scene) {
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
   scene.add(ambientLight)
 }
 
 // 4、聚光灯
-function addSpotLight() {
-  const spotLight = new THREE.SpotLight(0xffffff, 1)
-  spotLight.position.set(5, 10, 0)
-  scene.add(spotLight)
-}
+// function addSpotLight(scene) {
+//   const spotLight = new THREE.SpotLight(0xffffff, 1)
+//   spotLight.position.set(5, 10, 0)
+//   scene.add(spotLight)
+// }
 
 // 在场景中添加物体
 function addObject() {  
@@ -470,7 +563,7 @@ function addObject() {
   // composer.addPass(outlinePass)
 }
 
-let tex
+
 
 // 纹理加载
 function loadTexture(url, loadManager) {
@@ -491,28 +584,28 @@ function loadCubeTexture(paths, callback, basePath) {
 }
 
 const progress = ref(0)
-const loading = ref(false)
+const loading = ref(true)
+const pilesInfo = ref([
+  { id: 'pile1', title: '桩1', pileNo: '0001', status: '待机中', show: false },
+  { id: 'pile2', title: '桩2', pileNo: '0002', status: '已连接', show: false },
+  { id: 'pile3', title: '桩3', pileNo: '0003', status: '待机中', show: false },
+  { id: 'pile4', title: '桩4', pileNo: '0004', status: '待机中', show: false },
+  { id: 'pile5', title: '桩5', pileNo: '0005', status: '待机中', show: false },
+  { id: 'pile6', title: '桩6', pileNo: '0006', status: '待机中', show: false },
+])
 
-
-// charge station
 function loadChargeSationModels() {
-  // const url = '/three/new_energy_vehicle_charging_station/scene.gltf'
   const url = './three/new_energy_vehicle_charging_station.glb'
   const onProgress = (val) => {
-    // progress.value = val + '%'
-    console.log(`GLTF加载进度：${val}`)
+    // console.log(`GLTF加载进度：${val}`)
     progress.value = val
   }
   loading.value = true
 
   loadModels(url, (gltf) => {
-    console.log(gltf)
-    // onsole.log(gltf.scene.)
-    // gltf.scene.scale.set(0.9, 0.9, 0.9)
-    // gltf.scene.scale.set(0.2, 0.2, 0.2)
+    // console.log(gltf)
     const model = gltf.scene
     model.position.set(0, 0, 0)
-    // model.material.envMap = envMap
 
     // // 创建包围盒并计算尺寸
     // const box = new THREE.Box3().setFromObject(model)
@@ -529,29 +622,37 @@ function loadChargeSationModels() {
     // model.position.copy(cent).multiplyScalar(-1)
     // model.position.y -= (size.y * 0.5)
 
-    model.traverse((child) => {
-
+    
+    model.children[0].traverse((child) => {
+      if(child.isGroup) {
+        if(child.name.includes('pile')) {
+          // console.log('child:', child.getWorldPosition(new THREE.Vector3()), child)
+          // // const css3Obj = 
+          // 注意：blender的z轴垂直向上，threejs的y轴垂直向上
+          // createCss3DObj(child.name, child, { x: 0, y: 0, z: child.position.z })
+          meshes.push(child)
+        }
+      }
     })
     loading.value = false
     scene.add(model)    
   
-  }, onProgress)
- 
+  }, onProgress) 
 }
-
 
 // gltf要放到public文件夹里
 // 纹理文件需与模型文件在同一目录或正确指定路径
-function loadModels(url, callback, onProgress) {
+function loadModels(url, callback, onProgress, draco = false) {
   const loader = new GLTFLoader()
-  // const dracoLoader = new DRACOLoader()
-  // dracoLoader.setDecoderPath( 'three/examples/jsm/libs/draco/' )
-  // loader.setDRACOLoader( dracoLoader )
+  if(draco) {
+    const dracoLoader = new DRACOLoader()
+    dracoLoader.setDecoderPath( 'three/examples/jsm/libs/draco/' )
+    loader.setDRACOLoader( dracoLoader )
+  }
   
   loader.load(url, (gltf) => {
     callback(gltf)
-  }, (progerss) => {
-    // console.log(`GLTF加载进度：${(progerss.loaded / progerss.total) * 100}%`)
+  }, (progerss) => {  
     const progress = Math.floor(progerss.loaded / progerss.total * 100)
     onProgress(progress)
   }, (error) => {
@@ -559,16 +660,43 @@ function loadModels(url, callback, onProgress) {
   })
 }
 
+// 关闭标签
+const closeTag = (id) => {
+  if(choseObj) {
+    choseObj.remove(tags.get(id))
+    choseObj = null
+  }
+}
 
 </script>
 
 <template> 
-  <div class="h-full relative">
+  <div class="h-full">
     <div id="canvasContainer" class="min-h-screen"></div>
-    <!-- TODO: 蒙版 -->
-    <div v-if="loading" class = "h-full w-full bg-gray-200">
-      <progress class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" id="file" max="100" :value="progress">{{progress}}%</progress>
-    </div>
+
+    <div v-if="loading" class="fixed top-0 left-0 right-0 bottom-0 bg-white/65">
+      <label for="progress-bar" class="w-1/2 md:max-w-96 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
+        <progress
+          id="progress-bar"
+          class="grow-1 appearance-none h-[8px] border-none bg-[#e0e0e0] rounded-[4px]" 
+          max="100" 
+          :value="progress"
+        ></progress>
+        {{ progress }}%
+      </label>
+    </div> 
+    <!-- 首次加载时要隐藏，将display设置为none。当添加到场景时设置为block，添加后就会从初始渲染位置移动到添加的位置 -->
+    <PileInfo
+      v-for="(info, index) of pilesInfo" 
+      :key="info.id"
+      :id="info.id"        
+      :title="info.title"
+      :pile-no="info.pileNo"
+      :status="info.status"
+      style="display: none"
+      @close="closeTag(info.id)"
+    />
+
     <div class="absolute bottom-4 left-0 right-0 text-center text-sm text-gray-500">
       "New energy vehicle charging station - 新能源车充电站" (https://skfb.ly/pq7EV) by MrdT is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
     </div>
@@ -576,4 +704,20 @@ function loadModels(url, callback, onProgress) {
 </template>
 
 <style scoped>
+/* WebKit */
+progress::-webkit-progress-bar {
+  background: #e0e0e0; 
+  border-radius: 4px;  
+}
+progress::-webkit-progress-value {
+  border-radius: 4px;
+  background: #2b7fff;
+  transition: width 0.3s ease;
+}
+
+/* Firefox */
+progress::-moz-progress-bar {
+  border-radius: 4px;
+  background: #2b7fff;
+}
 </style>
