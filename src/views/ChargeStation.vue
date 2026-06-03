@@ -34,10 +34,9 @@ import sphereBack from '@/assets/img/sphereBack.jpg'
 
 import PileInfo from './PileInfo.vue'
 
-
 let container, camera, scene, renderer, envMap
 let outlinePass, composer, raycaster, css3Renderer, meshes = []
-// let  css2Renderer
+// let css2Renderer
 // const loadManager = new THREE.LoadingManager()
 
 onMounted(() => {
@@ -45,21 +44,13 @@ onMounted(() => {
   container = document.getElementById('canvasContainer')
 
   init()
-
-  // TODO: 确认是否生效
-  // onresize 事件会在窗口被调整大小时发生
-  // <canvas data-engine="three.js r184" width="818" height="868" aria-label="3D新能源汽车充电站展示" tabindex="0" style="width: 655px; height: 695px; touch-action: none;"></canvas>
+ 
   window.addEventListener('resize', () => {
-    console.log('container.clientWidth:', container.clientWidth, 'container.clientWidth:', container.clientHeight)
-    const a = document.getElementById('canvasContainer')
-    console.log(a.clientWidth, a.clientHeight)
-    console.log('window.devicePixelRatio:',window.devicePixelRatio, '.getPixelRatio', renderer.getPixelRatio(), renderer.getCurrentViewport(new THREE.Vector2()))
-
     const width = container.clientWidth
     const height = container.clientHeight
 
     // 解决背景图变形
-    envMapResize(width, height)
+    envMapResize(width, height, envMap)
 
     // 重置渲染器输出画布canvas尺寸: style中设置的width和height，
     // canvas的width和height属性可能和style的不一样，但是比值一样
@@ -81,22 +72,18 @@ onUnmounted(() => {
   scene?.clear()
 })
 
-function envMapResize(width, height) {
-  console.log('envMapResize', envMap)
+function envMapResize(width, height, envMap) {
   // 解决背景图变形
   if (envMap) {
-    const canvasAspect = width / height  //第1步：计算出画布宽高比
-    // const bgTexture = textureRef.current
+    const canvasAspect = width / height  //第1步：计算出画布宽高比  
     const imgAspect = envMap.width / envMap.height  //第2步：计算出背景图宽高比
     const resultAspect = imgAspect / canvasAspect  //第3步：计算出最终背景图宽缩放宽高比
 
-    //第4步：设置背景图纹理的偏移和重复
+    // 第4步：设置背景图纹理的偏移和重复
     envMap.offset.x = resultAspect > 1 ? (1 - 1 / resultAspect) / 2 : 0
     envMap.repeat.x = resultAspect > 1 ? 1 / resultAspect : 1
     envMap.offset.y = resultAspect > 1 ? 0 : (1 - resultAspect) / 2
     envMap.repeat.y = resultAspect > 1 ? 1 : resultAspect
-   // TODO： 初始化时imgAspect是NaN
-    console.log('imgAspect:', imgAspect, 'canvasAspect:', canvasAspect)
   }
 }
 
@@ -105,14 +92,15 @@ function init() {
 
   // 1. 相机
   const aspect = container.clientWidth / container.clientHeight
-  camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 2000)
+  camera = new THREE.PerspectiveCamera(30, aspect, 0.1, 2000)
 
   // const k = container.clientWidth / container.clientHeight
   // const s = 0.5; //控制left, right, top, bottom范围大小
   // camera = new THREE.OrthographicCamera(-s * k, s * k, s, -s, 1, 8000)
   
-  // camera.position.set(0, 0, 0)
-  camera.position.set(-250, 150, 300)
+  // camera.position.set(0, 0, 0)  
+  // camera.position.set(-200, 150, 600) // 45
+  camera.position.set(-220, 150, 800)
 
   camera.lookAt(0, 0, 0)
   camera.updateProjectionMatrix()
@@ -122,17 +110,17 @@ function init() {
 
   // 3. 渲染器，并将其渲染后的canvas元素添加到页面中  
   renderer = new THREE.WebGLRenderer({
-    canvas: container.appendChild(document.createElement('canvas')), // 指定渲染器输出的canvas元素
+    // 指定渲染器输出的canvas元素，或：container.appendChild(renderer.domElement)
+    canvas: container.appendChild(document.createElement('canvas')),
     antialias: true, //开启抗锯齿
     // clearColor: 0xFFFFFF, //设置背景颜色
   })
-  // renderer.setSize(800, 600)
+   
   renderer.setSize(container.clientWidth, container.clientHeight)
-  // 获取你屏幕对应的设备像素比.devicePixelRatio告诉threejs,以免渲染模糊问题
+  // 获取屏幕对应的设备像素比.devicePixelRatio，告诉threejs，以免渲染模糊问题
   renderer.setPixelRatio(window.devicePixelRatio)
   renderer.setClearColor(0xFFFFFF, 1) //设置背景颜色和透明度
-  // 创建渲染器时已指定了渲染器输出的canvas元素，就不需要再将renderer.domElement添加到页面中了
-  // container.appendChild(renderer.domElement) 
+  
   renderer.shadowMap.enabled = true
   renderer.domElement.setAttribute('aria-label', '3D新能源汽车充电站展示') // 屏幕阅读器
   renderer.domElement.setAttribute('tabindex', '0') // 键盘tab键访问
@@ -220,7 +208,7 @@ function init() {
 
 let choseObj = null
 let tags = new Map() // 存储已创建的标签，避免重复创建
-let tag = null 
+// let tag = null 
 function onClickHandler(event) {
   console.log('射线器返meshes:', meshes)
   // .offsetY、.offsetX以canvas画布左上角为坐标原点,单位px
@@ -264,12 +252,11 @@ function onClickHandler(event) {
   } 
 }
 
-function loadEnvMap() {
-  console.log('loadEnvMap:', container.clientWidth, container.clientHeight)
-  envMap = loadTexture(sphereBack)
-  envMapResize(container.clientWidth, container.clientHeight)
+async function loadEnvMap() {
+  envMap = await loadTexture(sphereBack)
   scene.environment = envMap
   scene.background = envMap
+  envMapResize(container.clientWidth, container.clientHeight, envMap)
 }
 
 function css2DRender(width, height) {
@@ -345,13 +332,11 @@ function animate() {
 function addHelpers() {
   // 辅助坐标轴 
   // addAxesHelper(300)
+  // addGridHelper()  
   addOrbitControls()
-  // addMapControls()
-  addGridHelper()
-  
+  // addMapControls()  
   addStats()
   // addGUI()
-
   // const viewHelper = new ViewHelper(camera, renderer.domElement)
   // scene.add(viewHelper)
 }
@@ -484,16 +469,25 @@ function addPointLight() {
 let directionalLight
 // 2、平行光
 function addDirectionalLight(scene) {
-  directionalLight = new THREE.DirectionalLight(0xffffff, 1)
+  directionalLight = new THREE.DirectionalLight(0xffffff, 2)
   directionalLight.position.set(400, 400, 400)
+
   directionalLight.castShadow = true
+  directionalLight.shadow.camera.left = -500
+  directionalLight.shadow.camera.right = 500
+  directionalLight.shadow.camera.top = 500
+  directionalLight.shadow.camera.bottom = -500
+  directionalLight.shadow.camera.near = 0.5
+  directionalLight.shadow.camera.far = 2000
   // addDirectionalLightHelper(directionalLight, 200)
+  // const cameraHelper = new THREE.CameraHelper(directionalLight.shadow.camera)
+  // scene.add(cameraHelper)
   scene.add(directionalLight)
 }
 
 // 3、环境光
 function addAmbientLight(scene) {
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1)
   scene.add(ambientLight)
 }
 
@@ -511,11 +505,14 @@ function addObject() {
 }
 
 // 纹理加载
-function loadTexture(url, loadManager) {
-  // const loader = new THREE.TextureLoader()
+async function loadTexture(url, loadManager) {
   const loader = loadManager ? new THREE.TextureLoader(loadManager) : new THREE.TextureLoader()
-  const tex = loader.load(url)
+  // const tex = loader.load(url, (tex) => {
+  //   console.log('onload tex:', tex.image, tex.image.width)
+  // })
+  const tex = await loader.loadAsync(url)
   tex.colorSpace = THREE.SRGBColorSpace
+  console.log({ tex }, tex.image)
   return tex
 }
 
@@ -565,9 +562,13 @@ function loadChargeSationModels() {
     // //Reposition to 0,halfY,0
     // model.position.copy(cent).multiplyScalar(-1)
     // model.position.y -= (size.y * 0.5)
-
     
-    model.children[0].traverse((child) => {
+    model.children[0].traverse((child) => {console.log('****',child.castShadow)
+      if(child.isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+      }
+      console.log('————',child.castShadow)
       if(child.isGroup) {
         if(child.name.includes('pile')) {
           // console.log('child:', child.getWorldPosition(new THREE.Vector3()), child)
@@ -575,6 +576,11 @@ function loadChargeSationModels() {
           // 注意：blender的z轴垂直向上，threejs的y轴垂直向上
           // createCss3DObj(child.name, child, { x: 0, y: 0, z: child.position.z })
           meshes.push(child)
+        }
+        // receiveShadow
+        if(child.name === 'ground') {
+          console.log(child)
+          child.receiveShadow = true
         }
       }
     })
