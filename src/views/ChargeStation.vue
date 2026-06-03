@@ -8,13 +8,11 @@ import Stats from 'three/addons/libs/stats.module.js'
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
 import { GLTFLoader, DRACOLoader } from 'three/examples/jsm/Addons.js'
 // import { MapControls } from 'three/addons/controls/mapControls.js'; // 相机控件
-// import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
-// 引入渲染器通道RenderPass
-// import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
-// 引入OutlinePass通道
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js'
 // import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
-// import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 // import { GlitchPass } from 'three/addons/postprocessing/GlitchPass.js'
 // import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 // import { GammaCorrectionShader } from 'three/addons/shaders/GammaCorrectionShader.js'
@@ -28,8 +26,6 @@ import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer
 import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js'
 // import { ViewHelper } from 'three/addons/helpers/ViewHelper.js'
 
-// import monkeyUrl from  '@/assets/three/monkey.glb'
-// import monkeyUrl2 from '@/assets/three/monkey.gltf'
 import sphereBack from '@/assets/img/sphereBack.jpg'
 
 // import {VertexNormalsHelper } from 'three/examples/jsm/helpers/VertexNormalsHelper.js'
@@ -107,7 +103,7 @@ function envMapResize(width, height) {
 function init() {
   const container = document.getElementById('canvasContainer')
 
-  // 1、相机
+  // 1. 相机
   const aspect = container.clientWidth / container.clientHeight
   camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 2000)
 
@@ -117,15 +113,14 @@ function init() {
   
   // camera.position.set(0, 0, 0)
   camera.position.set(-250, 150, 300)
-  // camera.position.set(400, 250, 700)
 
   camera.lookAt(0, 0, 0)
   camera.updateProjectionMatrix()
 
-  // 2、场景
+  // 2. 场景
   scene = new THREE.Scene()
 
-  // 3、渲染器，并将其渲染后的canvas元素添加到页面中  
+  // 3. 渲染器，并将其渲染后的canvas元素添加到页面中  
   renderer = new THREE.WebGLRenderer({
     canvas: container.appendChild(document.createElement('canvas')), // 指定渲染器输出的canvas元素
     antialias: true, //开启抗锯齿
@@ -150,64 +145,27 @@ function init() {
   sceneDesc.textContent = '3D新能源汽车充电站展示已加载'
   document.body.appendChild(sceneDesc)
 
-  renderer.domElement.addEventListener('click', onClickHandler)
+  renderer.domElement.addEventListener('click', onClickHandler)  
 
-  // renderer.domElement.addEventListener('click', function (event) {
-    // // .offsetY、.offsetX以canvas画布左上角为坐标原点,单位px
-    // const px = event.offsetX
-    // const py = event.offsetY
-    // //屏幕坐标px、py转WebGL标准设备坐标x、y
-    // //width、height表示canvas画布宽高度
-    // const x = (px / container.clientWidth) * 2 - 1
-    // const y = -(py / container.clientHeight) * 2 + 1
-
-    // //创建一个射线投射器`Raycaster`
-    // raycaster = new THREE.Raycaster()
-    // // 计算射线投射器`Raycaster`的射线属性.ray
-    // // 形象点说就是在点击位置创建一条射线，射线穿过的模型代表选中
-    // raycaster.setFromCamera(new THREE.Vector2(x, y), camera)
-    // //.intersectObjects([mesh1, mesh2, mesh3])对参数中的网格模型对象进行射线交叉计算
-    // // 未选中对象返回空数组[],选中一个对象，数组1个元素，选中两个对象，数组两个元素
-    // const intersects = raycaster.intersectObjects(meshes)
-    // console.log('射线器返回的对象:', intersects)
-    // // intersects.length大于0说明，说明选中了模型
-    // if (intersects.length > 0) {
-    //     // 选中模型的第一个模型，设置为红色
-    //     intersects[0].object.material.color.set(0xff0000)
-    //     intersects.forEach(item => {
-    //       console.log('item.object.name:', item.object.name, 'color', item.object.material.color)
-    //       // if(item.object.name === 'monkey' || item.object.name === 'sprite') {
-    //       // if(item.object.name === 'monkey') {
-    //       //   item.object.material.color.set(0xffff000)
-    //       //   console.log('color 2', item.object.material.color)
-    //       // }
-    //     })
-    // }
-  // })
-
+  // 4. 处理渲染后期
+  composer = new EffectComposer(renderer)
+  // 4.1 创建一个渲染器通道：指定后处理对应的相机camera和场景scene
+  const renderPass = new RenderPass(scene, camera)
+  composer.addPass(renderPass)
   
-
-  // 处理渲染后期
-  // 创建后处理对象EffectComposer，WebGL渲染器作为参数
-  // composer = new EffectComposer(renderer)
-  // // 创建一个渲染器通道，场景和相机作为参数
-  // const renderPass = new RenderPass(scene, camera)
-  // // 设置renderPass通道
-  // composer.addPass(renderPass)
-  
-  // OutlinePass可以给指定的某个模型对象添加一个高亮发光描边效果。
+  // 4.2 OutlinePass可以给指定的某个模型对象添加一个高亮发光描边效果
   // OutlinePass第一个参数v2的尺寸和canvas画布保持一致
-  // const v2 = new THREE.Vector2(container.clientWidth, container.clientHeight)
-  // outlinePass = new OutlinePass(v2, scene, camera)
-  // outlinePass.visibleEdgeColor.set(0x1bd921)
-  // //高亮发光描边厚度
-  // outlinePass.edgeThickness = 4
-  // //高亮描边发光强度
-  // outlinePass.edgeStrength = 6
-  // //模型闪烁频率控制，默认0不闪烁
-  // outlinePass.pulsePeriod = 2
+  const v2 = new THREE.Vector2(container.clientWidth, container.clientHeight)
+  outlinePass = new OutlinePass(v2, scene, camera)
+  outlinePass.visibleEdgeColor.set(0x00d3f3) // 0x1bd921
+  //高亮发光描边厚度
+  outlinePass.edgeThickness = 4
+  //高亮描边发光强度
+  outlinePass.edgeStrength = 6
+  //模型闪烁频率控制，默认0不闪烁
+  outlinePass.pulsePeriod = 2
   // 设置OutlinePass通道
-  // composer.addPass(outlinePass)
+  composer.addPass(outlinePass)
   
   // renderer.autoClear = false
   // const bloomPass = new UnrealBloomPass(v2, 1.5, 0.4, 0.85)
@@ -223,6 +181,15 @@ function init() {
   // // 创建伽马校正通道
   // const gammaPass= new ShaderPass(GammaCorrectionShader)
   // composer.addPass(gammaPass)
+
+  // width、height是canva画布的宽高度
+  // const smaaPass = new SMAAPass(container.clientWidth * pixelRatio, container.clientHeight * pixelRatio);
+  // composer.addPass(smaaPass)
+
+  // 将色调映射和颜色空间转换纳入您的处理链中。在大多数情况下，此处理应包含在每个处理链的末尾。
+  // 如果某个处理需要sRGB输入（例如FXAA），则该处理必须在处理链中紧随OutputPass之后
+  const outputPass = new OutputPass()
+  composer.addPass(outputPass)
   
   // const pixelRatio = renderer.getPixelRatio();//获取设备像素比 
   // const FXAAPass = new ShaderPass( FXAAShader );
@@ -232,13 +199,6 @@ function init() {
   // FXAAPass.uniforms.resolution.value.y = 1 /(container.clientHeight * pixelRatio);
   // composer.addPass( FXAAPass )
 
-  // width、height是canva画布的宽高度
-  // const smaaPass = new SMAAPass(container.clientWidth * pixelRatio, container.clientHeight * pixelRatio);
-  // composer.addPass(smaaPass)
-
-  // 放最后
-  // const outputPass = new OutputPass()
-  // composer.addPass( outputPass ) 
   // renderer.setAnimationLoop(animate) //设置渲染循环，参数是一个函数，在每一帧执行
 
   // css2Renderer = css2DRender(container.clientWidth, container.clientHeight)
@@ -299,13 +259,9 @@ function onClickHandler(event) {
       // 移除上一个标签
       choseObj && choseObj.remove(tags.get(choseObj.name))
       choseObj = parent
+      outlinePass.selectedObjects = [parent]
     }
   } 
-  // else {
-  //   if(choseObj) {
-  //     choseObj = null
-  //   }
-  // }
 }
 
 function loadEnvMap() {
@@ -343,27 +299,18 @@ function createCss3DRenderer(width, height, container) {
   return css3Renderer
 }
 
-
 function createCss3DObj(id, { x = 0, y = 0, z = 0 } = {}) {
   const div = document.getElementById(id)
   console.log('createCss3DObj div:', div, pilesInfo.value.find(item => item.id === id))
   div.style.pointerEvents = 'none'
+  // 页面加载时
   div.style.display = 'block'
 
-  // const div = document.createElement('div')
-  // div.id = id
-  // div.textContent = text
-  // div.style.color = '#FFFFFF'
-  // div.style.pointerEvents = 'none'
-  
   // HTML元素转化为threejs的CSS3模型对象
   const tag = new CSS3DObject(div)
   //标签tag作为mesh子对象，默认标注在模型局部坐标系坐标原点
-  // mesh.add(tag)
-  // tags.set(id, tag)
-  // console.log('add tag:', mesh)
+
   // tag的局部坐标
-  // tag.position.y += 80
   tag.position.x = x
   tag.position.y = y
   tag.position.z = z
@@ -388,16 +335,16 @@ function animate() {
   css3Renderer.render(scene, camera)
   // renderer.autoClear = false
   // renderer.clearDepth()
-  // composer.render(scene, camera)
+  composer.render()
 
   requestAnimationFrame(animate)
-  renderer.render(scene, camera)
+  // renderer.render(scene, camera)
 }
 
 /* 添加辅助工具 */
 function addHelpers() {
   // 辅助坐标轴 
-  addAxesHelper(300)
+  // addAxesHelper(300)
   addOrbitControls()
   // addMapControls()
   addGridHelper()
@@ -563,8 +510,6 @@ function addObject() {
   // composer.addPass(outlinePass)
 }
 
-
-
 // 纹理加载
 function loadTexture(url, loadManager) {
   // const loader = new THREE.TextureLoader()
@@ -573,7 +518,6 @@ function loadTexture(url, loadManager) {
   tex.colorSpace = THREE.SRGBColorSpace
   return tex
 }
-
 
 function loadCubeTexture(paths, callback, basePath) {
   const cubeLoader = new THREE.CubeTextureLoader()
@@ -665,6 +609,7 @@ const closeTag = (id) => {
   if(choseObj) {
     choseObj.remove(tags.get(id))
     choseObj = null
+    outlinePass.selectedObjects = []
   }
 }
 
@@ -687,7 +632,7 @@ const closeTag = (id) => {
     </div> 
     <!-- 首次加载时要隐藏，将display设置为none。当添加到场景时设置为block，添加后就会从初始渲染位置移动到添加的位置 -->
     <PileInfo
-      v-for="(info, index) of pilesInfo" 
+      v-for="info of pilesInfo" 
       :key="info.id"
       :id="info.id"        
       :title="info.title"
