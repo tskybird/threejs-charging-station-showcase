@@ -202,13 +202,12 @@ function init() {
 
   addObject()
   loadEnvMap()
-  animate()
-  
+  animate()  
 }
 
 let choseObj = null
 let tags = new Map() // 存储已创建的标签，避免重复创建
-// let tag = null 
+
 function onClickHandler(event) {
   console.log('射线器返meshes:', meshes)
   // .offsetY、.offsetX以canvas画布左上角为坐标原点,单位px
@@ -230,9 +229,18 @@ function onClickHandler(event) {
   console.log('射线器返回的对象:', intersects)
   // intersects.length大于0说明，说明选中了模型
   if (intersects.length > 0) {
+    // 桩的子模型枪gun和screen，又都分别有子模型
+    // blender创建的模型不同材质的部分，转换成gltf后，可能是不同的mesh
+    // 因此相交中模型的直接parent不一定是桩，用直接parent的name查找，有可能找不到对应的id的div    
     // 第一个是最近的
-    const parent = intersects[0].object.parent
-    const id = parent.name
+    let parent = intersects[0].object.parent
+    let id = parent.name
+    console.log('id-1:', id)
+    if(id.includes('gun') || id.includes('screen')) {
+      parent = parent.parent
+      id = parent.name      
+    }
+    console.log('id-2:', id)
     
     if(!choseObj || choseObj.name !== id) {
       let tag
@@ -563,12 +571,13 @@ function loadChargeSationModels() {
     // model.position.copy(cent).multiplyScalar(-1)
     // model.position.y -= (size.y * 0.5)
     
-    model.children[0].traverse((child) => {console.log('****',child.castShadow)
+    model.children[0].traverse((child) => {
       if(child.isMesh) {
         child.castShadow = true
         child.receiveShadow = true
       }
-      console.log('————',child.castShadow)
+      
+      // 桩的子模型枪gun和screen，又都分别有子模型
       if(child.isGroup) {
         if(child.name.includes('pile')) {
           // console.log('child:', child.getWorldPosition(new THREE.Vector3()), child)
@@ -600,7 +609,7 @@ function loadModels(url, callback, onProgress, draco = false) {
     loader.setDRACOLoader( dracoLoader )
   }
   
-  loader.load(url, (gltf) => {
+  loader.load(url, (gltf) => {console.log(gltf)
     callback(gltf)
   }, (progerss) => {  
     const progress = Math.floor(progerss.loaded / progerss.total * 100)
